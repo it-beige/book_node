@@ -1,7 +1,7 @@
 const {
   CODE_ERROR
 } = require('../utils/constant')
-
+const Result = require('../models/Result')
 const express = require('express')
 const boom = require('boom')
 const userRouter = require('./user')
@@ -36,12 +36,10 @@ router.use((err, req, res, next) => {
   const msg = (err && err.message) || '系统错误'
   const statusCode = (err.output && err.output.statusCode) || 500;
   const errorMsg = (err.output && err.output.payload && err.output.payload.error) || err.message
-  res.status(statusCode).json({
-    code: CODE_ERROR,
-    msg,
+  new Result(null, '系统错误', {
     error: statusCode,
     errorMsg
-  })
+  }).fail(res)
 })
 
 module.exports = router
