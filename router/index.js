@@ -39,13 +39,26 @@ router.use((req, res, next) => {
  * 第二，方法的必须放在路由最后
  */
 router.use((err, req, res, next) => {
-  const msg = (err && err.message) || '系统错误'
-  const statusCode = (err.output && err.output.statusCode) || 500;
-  const errorMsg = (err.output && err.output.payload && err.output.payload.error) || err.message
-  new Result(null, msg, {
-    error: statusCode,
-    errorMsg
-  }).fail(res)
+  // 对token失效进行提示
+  if (err.name === 'UnauthorizedError') {
+    console.log(err)
+    res.json({
+      code: CODE_TOKEN_EXPIRED,
+      msg: '登录超时,请重新登录',
+      error: err.status,
+      errorMsg: err.name
+    })
+  } else {
+    const msg = (err && err.message) || '系统错误'
+    const statusCode = (err.output && err.output.statusCode) || 500;
+    const errorMsg = (err.output && err.output.payload && err.output.payload.error) || err.message
+    res.status(statusCode).json({
+      code: CODE_ERROR,
+      msg,
+      error: statusCode,
+      errorMsg
+    })
+  }
 })
-
+  
 module.exports = router
