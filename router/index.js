@@ -2,12 +2,12 @@ const {
   CODE_ERROR,
   CODE_TOKEN_EXPIRED
 } = require('../utils/constant')
-const Result = require('../models/Result');
+
 const express = require('express')
 const boom = require('boom')
 const jwtAuth = require('./jwt')
 const userRouter = require('./user')
-
+const bookRouter = require('./book')
 
 // 注册路由
 const router = express.Router()
@@ -15,12 +15,13 @@ const router = express.Router()
 // 对后续请求进行身份验证
 router.use(jwtAuth)
 
-router.get('/', function(req, res, next) {
+router.get('/', function(req, res) {
   res.send('欢迎学习小慕读书管理后台')
 })
 
 // 对路由模块进行独立
 router.use('/user', userRouter)
+router.use('/book', bookRouter)
 
 
 /**
@@ -41,7 +42,6 @@ router.use((req, res, next) => {
 router.use((err, req, res, next) => {
   // 对token失效进行提示
   if (err.name === 'UnauthorizedError') {
-    console.log(err)
     res.json({
       code: CODE_TOKEN_EXPIRED,
       msg: '登录超时,请重新登录',
