@@ -8,6 +8,7 @@ const boom = require('boom')
 const jwtAuth = require('./jwt')
 const userRouter = require('./user')
 const bookRouter = require('./book')
+const Result = require('../models/Result')
 
 // 注册路由
 const router = express.Router()
@@ -51,13 +52,11 @@ router.use((err, req, res, next) => {
   } else {
     const msg = (err && err.message) || '系统错误'
     const statusCode = (err.output && err.output.statusCode) || 500;
-    const errorMsg = (err.output && err.output.payload && err.output.payload.error) || err.message
-    res.status(statusCode).json({
-      code: CODE_ERROR,
-      msg,
-      error: statusCode,
-      errorMsg
-    })
+    const errorMsg = (err.output && err.output.payload && err.output.payload.error) || err.message;
+    new Result(null, msg, {
+      errorMsg,
+      statusCode
+    }).fail(res)
   }
 })
   
