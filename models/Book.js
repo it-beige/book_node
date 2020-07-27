@@ -7,6 +7,7 @@ const {
 const fs = require('fs');
 const Epub = require('../utils/epub');
 const xml2js = require('xml2js').parseString
+const path = require('path');
 
 class Book {
   constructor(file, data) {
@@ -34,7 +35,6 @@ class Book {
     const url = `${UPLOAD_URL}/book/${filename}${suffix}`; // 文件下载的Url
     const unzipPath = `${UPLOAD_PATH}/unzip/${filename}` //文件解压后的文件夹路径
     const unzipUrl = `${UPLOAD_URL}/unzip/${filename}` //文件解压后的文件夹路径
-    console.log(file);
     if (!fs.existsSync(unzipPath)) {
       fs.mkdirSync(unzipPath, {
         recursive: true
@@ -59,7 +59,6 @@ class Book {
     this.language = '' // 语种
     this.unzipUrl = unzipUrl // 解压后的电子书链接
     this.originalName = originalname
-    console.log(this);
   }
 
 
@@ -127,8 +126,9 @@ class Book {
               try {
                 this.unzip(); 
                 this.parseContents(epub)
-                  .then(({chapters}) => {
+                  .then(({chapters, chapterTree}) => {
                     this.contents = chapters;
+                    this.chapterTree = chapterTree;
                     epub.getImage(cover, handlerGetImage)
                   })
               } catch(e) {
@@ -197,14 +197,15 @@ class Book {
     }
     
 
-    const tocFilePath = `${Book.genPath(this.unzipPath)}/${getNcxFilePath()}`;
+    const ncxFilePath = `${Book.genPath(this.unzipPath)}/${getNcxFilePath()}`;
    
     // 具体的业务逻辑
-    if (!fs.existsSync(tocFilePath)) {
+    if (!fs.existsSync(ncxFilePath)) {
       throw new Error('目录文件不存在');
     } else {
       return new Promise((resolve, reject) => {
-        const xml = fs.readFileSync(tocFilePath, 'utf-8');
+        const xml = fs.readFileSync(ncxFilePath, 'utf-8');
+        const dir = path.dirname(ncxFilePath).replace(`${UPLOAD_PATH}`, '')
         xml2js(xml, {
           // TODO 配置JSON解析去掉数组
           explicitArray: false,
@@ -219,23 +220,26 @@ class Book {
               const newNavMap = flatten(navMap.navPoint) // TODO 数组拍平，消除嵌套关系
               const chapters = [];
               // 如果目录大于从ncx解析出来的数量，则直接跳过
-              epub.flow.forEach((chapter, index) => {
-                if (index + 1 > newNavMap.length) return;
-                const nav = newNavMap[index]; // 根据index找到对应的navMap
-                chapter.text = `${UPLOAD_URL}/unzip/${this.fileName}/${chapter.href}`; // 生成章节的URL
-                if (nav && nav.navLabel) {
-                  chapter.label = nav.navLabel.text || '';
-                }  else {
-                  chapter.label = '';
-                }
-                chapter.level = nav.level;
-                chapter.pid = nav.pid;
-                chapter.navId = nav['$'].id;
+              newNavMap.forEach((chapter, index) => {
+                const src = chapter.content['$'].src;
+                console.log(chapter);
+                chapter.text = `${UPLOAD_URL}${dir}/${src}`; // 生成章节的URL
+                chapter.label = chapter.navLabel.text || '';
+                chapter.navId = chapter['$'].id
                 chapter.order = index + 1;
                 chapter.fileName = this.fileName;
                 chapters.push(chapter)
               })
-              resolve({chapters})
+              const chapterTree = [];
+              chapters.forEach(c => {
+                if (c.pid === '') {
+                  chapterTree.push(c);
+                } else {
+                  const parent = chapters.find(_ => _.navId === c.pid);
+                  parent.children.push(c);
+                }
+              })
+              resolve({chapters, chapterTree})
             } else {
               reject(new Error('该图书没有目录'))
             }
