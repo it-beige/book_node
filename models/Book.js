@@ -64,7 +64,27 @@ class Book {
 
   // 从数据创建book对象
   createBookFormData(data) {  
-    
+    this.fileName = data.fileName;
+    this.originalName = data.originalName;
+    this.path = data.path;
+    this.filePath = data.filePath;
+    this.title = data.title;
+    this.author = data.author;
+    this.publisher = data.publisher;
+    this.cover = data.coverPath
+    this.coverPath = data.coverPath;
+    this.category = data.category || 99; // 分类ID
+    this.creategoryText = data.creategoryText || '自定义'; // 分类
+    this.language = data.language;
+    this.rootFile = data.rootFile;
+    this.unzipPath = data.unzipPath;
+    this.createUser = data.username;
+    this.contents = data.contents || [];
+    this.createDt = new Date().getTime()
+    this.updateDt = new Date().getTime()
+    this.bookId = data.fileName;
+    // 图片来源 0: 数据库上传 1: 用户上传
+    this.updateType = data.updateType === 0 ? data.updateType : UPDATE_TYPE_FROM_WEB;
   }
 
   
@@ -116,7 +136,7 @@ class Book {
                   const imgPath = `${UPLOAD_PATH}/img/${this.fileName}.${suffix}`; // 图片存储路径
                   const imgURL = `${UPLOAD_URL}/img/${this.fileName}.${suffix}`; // 图片存储的url
                   fs.writeFileSync(imgPath, file)
-                  this.coverPath = imgPath;
+                  this.coverPath = `/img/${this.fileName}.${suffix}`
                   this.coverURL = imgURL;
                   resolve(this)
                 }
@@ -222,7 +242,8 @@ class Book {
               // 如果目录大于从ncx解析出来的数量，则直接跳过
               newNavMap.forEach((chapter, index) => {
                 const src = chapter.content['$'].src;
-                console.log(chapter);
+                chapter.href= `${dir}/${src}`.replace(this.unzipPath, '');
+                chapter.id = `${src}`;
                 chapter.text = `${UPLOAD_URL}${dir}/${src}`; // 生成章节的URL
                 chapter.label = chapter.navLabel.text || '';
                 chapter.navId = chapter['$'].id
@@ -249,16 +270,65 @@ class Book {
     }
   }
 
-  
-  static genPath(path) {
-    if (path.startsWith('/')) {
-      return path = `${UPLOAD_PATH}${path}`;
-    } else {
-      return path = `${UPLOAD_PATH}/${path}`;
+  // 将字段和数据库进行对应
+  toDb() {
+    return {
+      fileName: this.fileName,
+      cover: this.cover,
+      title: this.title,
+      author: this.author,
+      publisher: this.publisher,
+      bookId: this.bookId,
+      updateType: this.updateType,
+      language: this.language,
+      rootFile: this.rootFile,
+      originalName: this.originalName,
+      filePath: this.path,
+      unzipPath: this.unzipPath,
+      coverPath: this.coverPath,
+      createUser: this.createUser,
+      createDt: this.createDt,
+      updateDt: this.updateDt,
+      category: this.category || 99,
+      categoryText: this.categoryText || '自定义'
     }
   }
 
+  // 获取目录信息
+  getContents() {
+    return this.contents || []
+  }
 
+  
+  static genPath(path) {
+    if (path.startsWith('/')) {
+      return path = `${UPLOAD_PATH}${path}`
+    } else {
+      return path = `${UPLOAD_PATH}/${path}`
+    }
+  }
+
+  reset() {
+    if (Book.pathExists(this.filePath)) {
+      // 移除文件
+      fs.unlinkSync(Book.genPath(this.path))
+    }
+    if (Book.pathExists(this.coverPath)) {
+      fs.unlinkSync(Book.genPath(this.coverPath))
+    }
+    if (Book.pathExists(this.unzipPath)) {
+      // 移除目录
+      fs.rmdirSync(Book.genPath(this.unzipPath), { recursive: true })
+    }
+  }
+
+  static pathExists(path) {
+    if (path.startsWith(UPLOAD_PATH)) {
+      return fs.existsSync(path)
+    } else {
+      return fs.existsSync(Book.genPath(path))
+    }
+}
   
 }
 
