@@ -2,7 +2,8 @@ const {
   MEME_TYPE_EPUB,
   UPLOAD_PATH,
   UPLOAD_URL,
-  UPDATE_TYPE_FROM_WEB
+  UPDATE_TYPE_FROM_WEB,
+  OLD_UPLOAD_URL
 } = require('../utils/constant');
 const fs = require('fs');
 const Epub = require('../utils/epub');
@@ -146,9 +147,9 @@ class Book {
               try {
                 this.unzip(); 
                 this.parseContents(epub)
-                  .then(({chapters, chapterTree}) => {
+                  .then(({chapters, contentsTree}) => {
                     this.contents = chapters;
-                    this.chapterTree = chapterTree;
+                    this.contentsTree = contentsTree;
                     epub.getImage(cover, handlerGetImage)
                   })
               } catch(e) {
@@ -251,16 +252,8 @@ class Book {
                 chapter.fileName = this.fileName;
                 chapters.push(chapter)
               })
-              const chapterTree = [];
-              chapters.forEach(c => {
-                if (c.pid === '') {
-                  chapterTree.push(c);
-                } else {
-                  const parent = chapters.find(_ => _.navId === c.pid);
-                  parent.children.push(c);
-                }
-              })
-              resolve({chapters, chapterTree})
+              const contentsTree = Book.getContentsTree(chapters)
+              resolve({chapters, contentsTree})
             } else {
               reject(new Error('该图书没有目录'))
             }
@@ -300,14 +293,7 @@ class Book {
   }
 
   
-  static genPath(path) {
-    if (path.startsWith('/')) {
-      return path = `${UPLOAD_PATH}${path}`
-    } else {
-      return path = `${UPLOAD_PATH}/${path}`
-    }
-  }
-
+  
   reset() {
     if (Book.pathExists(this.filePath)) {
       // 移除文件
@@ -322,13 +308,65 @@ class Book {
     }
   }
 
+  static genPath(path) {
+    if (path.startsWith('/')) {
+      return path = `${UPLOAD_PATH}${path}`
+    } else {
+      return path = `${UPLOAD_PATH}/${path}`
+    }
+  }
+
   static pathExists(path) {
     if (path.startsWith(UPLOAD_PATH)) {
       return fs.existsSync(path)
     } else {
       return fs.existsSync(Book.genPath(path))
     }
-}
+  }
+
+  static getCoverUrl(book) {
+    let { cover } = book;
+    if (+book.updateType === 0) {
+      if (cover) {
+        return cover.startsWith('/') 
+          ? `${OLD_UPLOAD_URL}${cover}`
+          : `${OLD_UPLOAD_URL}/${cover}`
+      } else {
+        return null;
+      }
+    } else {
+      if (cover) {
+        return cover.startsWith('/') 
+          ? `${UPLOAD_URL}${cover}`
+          : `${UPLOAD_URL}/${cover}`
+      } else {
+        return null;
+      }
+    }
+  }
+
+  static getContentsTree(contents) {
+    if (contents && contents.length > 0) {
+      let contentsTree = [];
+      
+      contents.forEach(item => {
+        // 用于存在当目录的子目录
+        item.children = []
+        if (item.pid === '') {  // 通过pid是否存在来判断当前目录是否存在子目录
+          contentsTree.push(item);
+        } else {
+          let parent = contentsTree.find(_ => _.navId === item.pid);
+          // 部分老图书会出现父目录和子目录id对不上的情况
+          if (parent) {
+            parent.children.push(item)
+          }
+        }
+      })
+      return contentsTree;
+    } else {
+      return null;
+    }
+  }
   
 }
 

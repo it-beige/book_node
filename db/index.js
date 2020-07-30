@@ -8,6 +8,7 @@ const {
 } = require('./config')
 const { isObject } = require('../utils/index')
 const Result = require('../models/Result')
+const { reject } = require('lodash')
 
 // 链接数据库
 function connect() {
@@ -102,9 +103,34 @@ function insert(model, tableName) {
   })
 }
 
+// 通过用户编辑后的信息更新数据库存储对应的信息
+function update(model, tableName, where) {
+  return new Promise(async (resolve, reject) => {
+    if (!isObject(model)) {
+      reject(new Error('编辑的图书不合法'))
+    } else {
+      const sqlContent = [];
+      Object.keys(model).forEach((item, index, arr) => {
+        if (model.hasOwnProperty(item)) {
+          sqlContent.push(item + ' = ');
+          if (index === arr.length - 1) {
+            sqlContent.push(`\'${model[item]}'`)
+          } else {
+            sqlContent.push(`\'${model[item] + '\', '}`)
+          }
+        }
+      })
+      let sql = `update \`${tableName}\` set ${sqlContent.join('')} ${where}`
+      let res = await querySql(sql);
+      res ? resolve(res) : reject(new Error('修改失败，请稍后重试'));
+    }
+  })
+}
+
 module.exports = {
   connect,
   querySql,
   insert,
-  queryOne
+  queryOne,
+  update
 }

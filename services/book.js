@@ -51,7 +51,7 @@ async function insertContents(book) {
 }
 
 /* 
-  TODO 该方法用到了数据库操作，尽量通过await同步化, 避免太多的.then出现 
+  TODO 该方法用到了多处数据库操作，尽量通过await同步化, 避免太多的.then出现 
 */
 function insertBook(book) {
   return new Promise(async (resolve, reject) => {
@@ -75,6 +75,53 @@ function insertBook(book) {
   })
 }
 
+
+/**
+ * 
+ * @param {Sring} fileName 
+ * @desc 获取当前图片的filename所对应的数据
+ */
+function getBook(fileName) {
+  return new Promise(async (resolve, reject) => {
+    let sqlBook = `select * from Book where fileName='${fileName}'`;
+    let sqlContents = `select * from contents where fileName='${fileName}' order by \`order\` `;
+    let book = await db.queryOne(sqlBook);
+    let contents = await db.querySql(sqlContents);
+    if (book) {
+      book.coverURL = Book.getCoverUrl(book);
+      book.contentsTree = Book.getContentsTree(contents);
+      resolve(book)
+    } else {
+      reject(new Error('当前图书不存在'))
+    }
+  })
+}
+
+
+/**
+ * 
+ * @param {Object} book 
+ * @info 根据传递过来的图书信息从数据库中匹配
+ */
+function updateBook(book) {
+  return new Promise(async (resolve, reject) => {
+    if (book instanceof Book) {
+      let result = await getBook(book.fileName);
+      if (+result.updateType === 0) {
+        reject(new Error('内置图书不能编辑'))
+      } else {
+        let model = book.toDb();
+        await db.update(model, 'book', `where fileName='${book.fileName}'`);
+        resolve()
+      }
+    } else {
+      reject(new Error('编辑的图书不合法'));
+    }
+  })
+}
+
 module.exports = {
-  insertBook
+  insertBook,
+  getBook,
+  updateBook
 }
