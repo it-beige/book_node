@@ -44,6 +44,7 @@ function querySql(sql) {
   })
 }
 
+// 查询单个数据
 
 function queryOne(sql) {
   return new Promise((resolve, reject) => {
@@ -127,10 +128,42 @@ function update(model, tableName, where) {
   })
 }
 
+/**
+ * 
+ * @param {String} where 
+ * @param {String} key 
+ * @param {String} val 
+ * @info 根据需要查找的条件来进行where拼接
+ */
+function and(where, key, val) {
+  if (where === 'where') {
+    return `where \`${key}\`='${val}'`;
+  } else {
+    return `${where} and \`${key}\`='${val}'`
+  }
+}
+
+/**
+ * 
+ * @param {String} where 
+ * @param {String} key 
+ * @param {String} val 
+ * @info 对关键字进行模糊查询
+ */
+function andLike(where, key, val) {
+  if (where === 'where') {
+    return `where \`${key}\`like '%${val}%'`;
+  } else {
+    return `${where} and \`${key}\` like '%${val}%'`
+  }
+}
+
 module.exports = {
   connect,
   querySql,
   insert,
   queryOne,
-  update
+  update,
+  and,
+  andLike
 }

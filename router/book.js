@@ -7,9 +7,14 @@ const boom = require('boom');
 const {decode} = require('../utils/index')
 const servicesBook = require('../services/book');
 const Boom = require('boom');
+const { response } = require('express');
+
 
 const router = express.Router();
 
+/**
+ * @info 图书上传功能 
+ */
 router.post(
   '/upload', 
   multer({dest: `${UPLOAD_PATH}/book`}).single('file'),
@@ -29,7 +34,9 @@ router.post(
     }
   }
 )
-
+/**
+ * @info 上传图书
+ */
 router.post('/create', function(req, res, next) {
   const userInfo = decode(req)
   if (userInfo && userInfo.username) {
@@ -46,9 +53,11 @@ router.post('/create', function(req, res, next) {
   }
 })
 
+/**
+ * @info 获取图书
+ */
 router.get('/get', function(req, res, next) {
   let { fileName } = req.query;
-  console.log('fileName---------->', fileName);
   if (!fileName) {
     next(Boom.badRequest(new Error('编辑的图书不存在')))
   } else {
@@ -63,7 +72,9 @@ router.get('/get', function(req, res, next) {
   }
 })
 
-
+/**
+ * @info 编辑图书
+ */
 router.post('/update', function(req, res, next) {
   const userInfo = decode(req)
   if (userInfo && userInfo.username) {
@@ -79,6 +90,47 @@ router.post('/update', function(req, res, next) {
         next(boom.badImplementation(err))
       })
   }
+})
+
+/**
+ * @info 图书分类
+ */
+router.get('/category', function(req, res, next) {
+  servicesBook.categoryBook()
+    .then((response) => {
+      new Result(response, '获取图书分类成功').success(res)
+    })
+    .catch((err) => {
+      console.log('/book/category', err)
+      next(boom.badImplementation(err))
+    })
+})
+
+/**
+ * @info 图书列表
+ */
+router.get('/delete', function(req, res, next) {
+  servicesBook.deleteBook(req.query.fileName)
+    .then(response => {
+        new Result('删除图书成功').success(res)
+    })
+    .catch(err => {
+      next(boom.badImplementation(err))
+    })
+})
+
+
+/**
+ * @info 删除图书
+ */
+router.get('/list', function(req, res, next) {
+  servicesBook.getBookList(req.query)
+    .then(response => {
+        new Result(response, '获取图书列表成功').success(res)
+    })
+    .catch(err => {
+      next(boom.badImplementation(err))
+    })
 })
 
 module.exports = router;

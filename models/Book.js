@@ -293,8 +293,9 @@ class Book {
   }
 
   
-  
+  // 移除目录中的文件
   reset() {
+    console.log('reset------->', this);
     if (Book.pathExists(this.filePath)) {
       // 移除文件
       fs.unlinkSync(Book.genPath(this.path))
