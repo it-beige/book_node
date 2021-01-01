@@ -45,7 +45,6 @@ function querySql(sql) {
 }
 
 // 查询单个数据
-
 function queryOne(sql) {
   return new Promise((resolve, reject) => {
     querySql(sql)

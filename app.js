@@ -21,25 +21,25 @@ app.use('/', router)
 
 
 
-// 使 express 监听 5000 端口号发起的 http 请求
+// 使用 express 监听 5000 端口号发起的 http 请求
 const serverPort = '5000'
 const server = app.listen(serverPort, function () {
   let {
     address,
     port
   } = server.address();
-  console.log('Http Server is running on http://localhost:%s', port)
+  console.log('Http Server is running on http://localhost:%s', address, port)
 })
 
 // 搭建https服务
-const privateKey = fs.readFileSync('./https/ht.beige.world.key', 'utf8')
-const certificate = fs.readFileSync('./https/ht.beige.world.pem', 'utf8')
+const privateKey = fs.readFileSync('./https/book.beige.world.key', 'utf8')
+const certificate = fs.readFileSync('./https/book.beige.world.pem', 'utf8')
 const credentials = {
   key: privateKey,
   cert: certificate
 }
 const httpsServer = https.createServer(credentials, app)
-const SSLPORT = 18082
-httpsServer.listen(SSLPORT, function () {
-  console.log('HTTPS Server is running on: https://beige.world:%s', SSLPORT)
+const SSL_PORT = 18082
+httpsServer.listen(SSL_PORT, function () {
+  console.log('HTTPS Server is running on: https://book.beige.world:%s', SSL_PORT)
 })

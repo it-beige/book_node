@@ -42,6 +42,7 @@ router.use((req, res, next) => {
  */
 router.use((err, req, res, next) => {
   // 对token失效进行提示
+  console.log(err);
   if (err.name === 'UnauthorizedError') {
     res.json({
       code: CODE_TOKEN_EXPIRED,

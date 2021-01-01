@@ -9,6 +9,7 @@ const jwtAuth = expressJwt({
   path: [
     '/',
     '/user/login',
+    '/user/thirdpart/login',
     '/book/clear'
   ],
 });

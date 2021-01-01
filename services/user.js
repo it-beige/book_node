@@ -13,5 +13,5 @@ function findUser({ username }, next) {
 
 module.exports = {
   login,
-  findUser
+  findUser,
 }

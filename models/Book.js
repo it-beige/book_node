@@ -13,6 +13,7 @@ const path = require('path');
 class Book {
   constructor(file, data) {
     if (file) {
+      console.log('file------------>', file)
       this.createBookFormFile(file)
     }
 
