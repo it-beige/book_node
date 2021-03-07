@@ -6,6 +6,7 @@ const { body, validationResult } = require('express-validator')
 const Result = require('../models/Result')
 const userService = require('../services/user')
 const db = require('../db')
+var svgCaptcha = require('svg-captcha');
 
 const {
   PWD_SALT,
@@ -22,15 +23,16 @@ router.post(
     body('username').isString().withMessage('username类型不正确'),
     body('password').isString().withMessage('password类型不正确')
   ],
-  function(req, res, next) {
+  async function(req, res, next) {
     const err = validationResult(req)
+
     if (!err.isEmpty()) {
       const [{ msg }] = err.errors
       next(boom.badRequest(msg))
     } else {
       const username = req.body.username
       const password = md5(`${req.body.password}${PWD_SALT}`)
-      const user = userService.login({ username, password }, next)
+      const user = await userService.login({ username, password }, next)
       if (user) {
         const token = jwt.sign(
           { username },
@@ -48,9 +50,9 @@ router.post(
 
 let githubConfig = {
   // 客户ID
-  client_ID: 'Iv1.xxxxxx',
+  client_ID: 'Iv1.243cc65a0c47f657',
   // 客户密匙
-  client_Secret: 'xxxxxxxxx',
+  client_Secret: '3952ed099f8af043abe734414d2c7cb5bc9ed385',
   // 获取 access_token
   // eg: https://github.com/login/oauth/access_token?client_id=7***************6&client_secret=4***************f&code=9dbc60118572de060db4&redirect_uri=http://manage.hgdqdev.cn/#/login
   access_token_url: 'https://github.com/login/oauth/access_token',
@@ -149,6 +151,28 @@ router.get('/info', async function(req, res, next) {
     new Result(null, '用户信息解析失败').fail(res)
   }
 })
+
+var codeConfig = {
+   size: 4,// 验证码长度
+   ignoreChars: '0o1i', // 验证码字符中排除 0o1i
+   noise: 6, // 干扰线条的数量
+   fontSize: 50,
+   color: true,//开启文字颜色
+   background:"#1D92F1",//背景色
+   width: 100,
+   height: 35
+}
+router.get('/getCode', async function(req, res, next) {
+  // const captcha = svgCaptcha.create({ fontSize: 50, width: 100, height: 40 });
+  // const captcha = svgCaptcha.create({ fontSize: 50, width: 100, height: 40 });
+  const captcha = svgCaptcha.create(codeConfig);
+  res.setHeader('Content-Type', 'image/svg+xml');
+  // res.type('svg');
+  res.write(String(captcha.data));
+  res.end();
+})
+
+
 
 router.post('/logout', function(req, res, next) {
   new Result(null, '退出成功').success(res)

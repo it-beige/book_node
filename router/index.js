@@ -20,6 +20,8 @@ router.get('/', function(req, res) {
   res.send('欢迎学习小慕读书管理后台')
 })
 
+
+
 // 对路由模块进行独立
 router.use('/user', userRouter)
 router.use('/book', bookRouter)
