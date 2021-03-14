@@ -6,8 +6,15 @@ const { body, validationResult } = require('express-validator')
 const Result = require('../models/Result')
 const userService = require('../services/user')
 const db = require('../db')
-var svgCaptcha = require('svg-captcha');
+const svgCaptcha = require('svg-captcha');
+const uuid = require('node-uuid');
+const base64 = require('js-base64');
 
+//v1是根据时间戳生成的
+//v4是根据随机数生成的
+//如需保证唯一性，建议使用v1
+// var uuid1 = uuid.v1();
+// var uuid4 = uuid.v4();
 const {
   PWD_SALT,
   PRIVATE_KEY,
@@ -39,7 +46,7 @@ router.post(
           PRIVATE_KEY,
           { expiresIn: JWT_EXPIRED }
         )
-        new Result({ token }, '登录成功').success(res)
+        new Result({ token, appid: base64.encode(uuid.v1())}, '登录成功').success(res)
       } else {
         new Result(null, '用户名或密码不存在').fail(res)
       }
@@ -211,7 +218,6 @@ let baiduConfig = {
         let data = resbody && JSON.parse(resbody)
         
         if (!error && !data.error_code) {
-          console.log(data, '----------->');
           const user = await userService.findUser({ username: data.username })
           // 第一次gitHub授权向数据库存入用户数据
           if (!user) {
