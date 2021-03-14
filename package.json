@@ -13,6 +13,7 @@
     "adm-zip": "^0.4.16",
     "body-parser": "^1.19.0",
     "boom": "^7.3.0",
+    "cookie-parser": "^1.4.5",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "express": "^4.17.1",

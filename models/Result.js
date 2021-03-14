@@ -19,7 +19,7 @@ class Result {
     }
   }
 
-  createResult() {
+  createResult(isPrint = true) {
     if (!this.code) {
       this.code = CODE_SUCCESS
     }
@@ -33,17 +33,19 @@ class Result {
     if (this.options) {
       base = { ...base, ...this.options }
     }
-    console.log(base)
+    if (isPrint) {
+      console.log(base)
+    }
     return base
   }
 
-  json(res) {
-    res.json(this.createResult())
+  json(res, isPrint) {
+    res.json(this.createResult(isPrint))
   }
 
-  success(res) {
+  success(res, isPrint) {
     this.code = CODE_SUCCESS
-    this.json(res)
+    this.json(res, isPrint)
   }
 
   fail(res) {
